@@ -1,10 +1,10 @@
 'use strict';
 
-var spawn = require('cross-spawn')
-  , which = require('which')
-  , path = require('path')
-  , util = require('util')
-  , tty = require('tty');
+var spawn = require('cross-spawn'),
+  which = require('which'),
+  path = require('path'),
+  util = require('util'),
+  tty = require('tty');
 
 /**
  * Representation of a hook runner.
@@ -18,14 +18,14 @@ function Hook(fn, options) {
   if (!this) return new Hook(fn, options);
   options = options || {};
 
-  this.options = options;     // Used for testing only. Ignore this. Don't touch.
-  this.config = {};           // pre-commit configuration from the `package.json`.
-  this.json = {};             // Actual content of the `package.json`.
-  this.npm = '';              // The location of the `npm` binary.
-  this.git = '';              // The location of the `git` binary.
-  this.root = '';             // The root location of the .git folder.
-  this.status = '';           // Contents of the `git status`.
-  this.exit = fn;             // Exit function.
+  this.options = options; // Used for testing only. Ignore this. Don't touch.
+  this.config = {}; // pre-commit configuration from the `package.json`.
+  this.json = {}; // Actual content of the `package.json`.
+  this.npm = ''; // The location of the `npm` binary.
+  this.git = ''; // The location of the `git` binary.
+  this.root = ''; // The root location of the .git folder.
+  this.status = ''; // Contents of the `git status`.
+  this.exit = fn; // Exit function.
 
   this.initialize();
 }
@@ -38,9 +38,9 @@ function Hook(fn, options) {
  * @public
  */
 Object.defineProperty(Hook.prototype, 'silent', {
-  get: function silent() {
+  get : function silent() {
     return !!this.config.silent;
-  }
+  },
 });
 
 /**
@@ -51,9 +51,15 @@ Object.defineProperty(Hook.prototype, 'silent', {
  * @public
  */
 Object.defineProperty(Hook.prototype, 'colors', {
-  get: function colors() {
+  get : function colors() {
     return this.config.colors !== false && tty.isatty(process.stdout.fd);
-  }
+  },
+});
+
+Object.defineProperty(Hook.prototype, 'message', {
+  get : function message() {
+    return this.config.message;
+  },
 });
 
 /**
@@ -66,7 +72,7 @@ Object.defineProperty(Hook.prototype, 'colors', {
  */
 Hook.prototype.exec = function exec(bin, args) {
   return spawn.sync(bin, args, {
-    stdio: 'pipe'
+    stdio : 'pipe',
   });
 };
 
@@ -77,15 +83,15 @@ Hook.prototype.exec = function exec(bin, args) {
  * @api private
  */
 Hook.prototype.parse = function parse() {
-  var pre = this.json['pre-commit'] || this.json.precommit
-    , config = !Array.isArray(pre) && 'object' === typeof pre ? pre : {};
+  var pre = this.json['pre-commit'] || this.json.precommit,
+    config = !Array.isArray(pre) && 'object' === typeof pre ? pre : {};
 
-  ['silent', 'colors', 'template'].forEach(function each(flag) {
+  [ 'silent', 'colors', 'template', 'message' ].forEach(function each(flag) {
     var value;
 
     if (flag in config) value = config[flag];
-    else if ('precommit.'+ flag in this.json) value = this.json['precommit.'+ flag];
-    else if ('pre-commit.'+ flag in this.json) value = this.json['pre-commit.'+ flag];
+    else if ('precommit.' + flag in this.json) value = this.json['precommit.' + flag];
+    else if ('pre-commit.' + flag in this.json) value = this.json['pre-commit.' + flag];
     else return;
 
     config[flag] = value;
@@ -97,13 +103,8 @@ Hook.prototype.parse = function parse() {
   config.run = config.run || pre;
 
   if ('string' === typeof config.run) config.run = config.run.split(/[, ]+/);
-  if (
-       !Array.isArray(config.run)
-    && this.json.scripts
-    && this.json.scripts.test
-    && this.json.scripts.test !== 'echo "Error: no test specified" && exit 1'
-  ) {
-    config.run = ['test'];
+  if (!Array.isArray(config.run) && this.json.scripts && this.json.scripts.test && this.json.scripts.test !== 'echo "Error: no test specified" && exit 1') {
+    config.run = [ 'test' ];
   }
 
   this.config = config;
@@ -120,21 +121,20 @@ Hook.prototype.log = function log(lines, exit) {
   if (!Array.isArray(lines)) lines = lines.split('\n');
   if ('number' !== typeof exit) exit = 1;
 
-  var prefix = this.colors
-  ? '\u001b[38;5;166mpre-commit:\u001b[39;49m '
-  : 'pre-commit: ';
+  var prefix = this.colors ? '\u001b[38;5;166mpre-commit:\u001b[39;49m ' : 'pre-commit: ';
 
-  lines.push('');     // Whitespace at the end of the log.
-  lines.unshift('');  // Whitespace at the beginning.
+  lines.push(''); // Whitespace at the end of the log.
+  lines.unshift(''); // Whitespace at the beginning.
 
   lines = lines.map(function map(line) {
     return prefix + line;
   });
 
-  if (!this.silent) lines.forEach(function output(line) {
-    if (exit) console.error(line);
-    else console.log(line);
-  });
+  if (!this.silent)
+    lines.forEach(function output(line) {
+      if (exit) console.error(line);
+      else console.log(line);
+    });
 
   this.exit(exit, lines);
   return exit === 0;
@@ -147,9 +147,10 @@ Hook.prototype.log = function log(lines, exit) {
  * @api private
  */
 Hook.prototype.initialize = function initialize() {
-  ['git', 'npm'].forEach(function each(binary) {
-    try { this[binary] = which.sync(binary); }
-    catch (e) {}
+  [ 'git', 'npm' ].forEach(function each(binary) {
+    try {
+      this[binary] = which.sync(binary);
+    } catch (e) {}
   }, this);
 
   //
@@ -170,8 +171,8 @@ Hook.prototype.initialize = function initialize() {
   //
   if (!this.git) return this.log(this.format(Hook.log.binary, 'git'), 0);
 
-  this.root = this.exec(this.git, ['rev-parse', '--show-toplevel']);
-  this.status = this.exec(this.git, ['status', '--porcelain']);
+  this.root = this.exec(this.git, [ 'rev-parse', '--show-toplevel' ]);
+  this.status = this.exec(this.git, [ 'status', '--porcelain' ]);
 
   if (this.status.code) return this.log(Hook.log.status, 0);
   if (this.root.code) return this.log(Hook.log.root, 0);
@@ -182,7 +183,9 @@ Hook.prototype.initialize = function initialize() {
   try {
     this.json = require(path.join(this.root, 'package.json'));
     this.parse();
-  } catch (e) { return this.log(this.format(Hook.log.json, e.message), 0); }
+  } catch (e) {
+    return this.log(this.format(Hook.log.json, e.message), 0);
+  }
 
   //
   // We can only check for changes after we've parsed the package.json as it
@@ -198,7 +201,7 @@ Hook.prototype.initialize = function initialize() {
   // execute.
   //
   if (this.config.template) {
-    this.exec(this.git, ['config', 'commit.template', this.config.template]);
+    this.exec(this.git, [ 'config', 'commit.template', this.config.template ]);
   }
 
   if (!this.config.run) return this.log(Hook.log.run, 0);
@@ -225,10 +228,10 @@ Hook.prototype.run = function runner() {
     // this doesn't have the required `isAtty` information that libraries use to
     // output colors resulting in script output that doesn't have any color.
     //
-    spawn(hooked.npm, ['run', script, '--silent'], {
-      env: process.env,
-      cwd: hooked.root,
-      stdio: [0, 1, 2]
+    spawn(hooked.npm, [ 'run', script, '--silent' ], {
+      env   : process.env,
+      cwd   : hooked.root,
+      stdio : [ 0, 1, 2 ],
     }).once('close', function closed(code) {
       if (code) return hooked.log(hooked.format(Hook.log.failure, script, code));
 
@@ -253,49 +256,28 @@ Hook.prototype.format = util.format;
  * @private
  */
 Hook.log = {
-  binary: [
-    'Failed to locate the `%s` binary, make sure it\'s installed in your $PATH.',
-    'Skipping the pre-commit hook.'
-  ].join('\n'),
+  binary  : [ "Failed to locate the `%s` binary, make sure it's installed in your $PATH.", 'Skipping the pre-commit hook.' ].join('\n'),
 
-  status: [
-    'Failed to retrieve the `git status` from the project.',
-    'Skipping the pre-commit hook.'
-  ].join('\n'),
+  status  : [ 'Failed to retrieve the `git status` from the project.', 'Skipping the pre-commit hook.' ].join('\n'),
 
-  root: [
-    'Failed to find the root of this git repository, cannot locate the `package.json`.',
-    'Skipping the pre-commit hook.'
-  ].join('\n'),
+  root    : [ 'Failed to find the root of this git repository, cannot locate the `package.json`.', 'Skipping the pre-commit hook.' ].join('\n'),
 
-  empty: [
-    'No changes detected.',
-    'Skipping the pre-commit hook.'
-  ].join('\n'),
+  empty   : [ 'No changes detected.', 'Skipping the pre-commit hook.' ].join('\n'),
 
-  json: [
-    'Received an error while parsing or locating the `package.json` file:',
-    '',
-    '  %s',
-    '',
-    'Skipping the pre-commit hook.'
-  ].join('\n'),
+  json    : [ 'Received an error while parsing or locating the `package.json` file:', '', '  %s', '', 'Skipping the pre-commit hook.' ].join('\n'),
 
-  run: [
-    'We have nothing pre-commit hooks to run. Either you\'re missing the `scripts`',
-    'in your `package.json` or have configured pre-commit to run nothing.',
-    'Skipping the pre-commit hook.'
-  ].join('\n'),
+  run     : [ "We have nothing pre-commit hooks to run. Either you're missing the `scripts`", 'in your `package.json` or have configured pre-commit to run nothing.', 'Skipping the pre-commit hook.' ].join('\n'),
 
-  failure: [
-    'We\'ve failed to pass the specified git pre-commit hooks as the `%s`',
-    'hook returned an exit code (%d). If you\'re feeling adventurous you can',
+  failure : [
+    this.config.message && this.config.message,
+    "We've failed to pass the specified git pre-commit hooks as the `%s`",
+    "hook returned an exit code (%d). If you're feeling adventurous you can",
     'skip the git pre-commit hooks by adding the following flags to your commit:',
     '',
     '  git commit -n (or --no-verify)',
     '',
-    'This is ill-advised since the commit is broken.'
-  ].join('\n')
+    'This is ill-advised since the commit is broken.',
+  ].join('\n'),
 };
 
 //
