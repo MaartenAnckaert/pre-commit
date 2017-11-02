@@ -268,16 +268,7 @@ Hook.log = {
 
   run     : [ "We have nothing pre-commit hooks to run. Either you're missing the `scripts`", 'in your `package.json` or have configured pre-commit to run nothing.', 'Skipping the pre-commit hook.' ].join('\n'),
 
-  failure : [
-    'Sammeke alstublieft he!!! Maakt dat in orde is en geen debuggers in u code he!',
-    "We've failed to pass the specified git pre-commit hooks as the `%s`",
-    "hook returned an exit code (%d). If you're feeling adventurous you can",
-    'skip the git pre-commit hooks by adding the following flags to your commit:',
-    '',
-    '  git commit -n (or --no-verify)',
-    '',
-    'This is ill-advised since the commit is broken.',
-  ].join('\n'),
+  failure : [ 'Sammeke alstublieft he!!! Maakt dat in orde is en geen debuggers in u code he!' ].join('\n'),
 };
 
 //
